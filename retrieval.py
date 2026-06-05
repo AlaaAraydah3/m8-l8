@@ -14,12 +14,31 @@ Methodology (canonical — autograder enforces):
 """
 
 import json
+import os
 from collections import defaultdict
 from typing import Callable
 
 import weaviate
 
 CLASS_NAME = "Post"
+
+# ---------------------------------------------------------------------------
+# Model loading — uses bundled local copy first to avoid HuggingFace rate
+# limits in CI; falls back to remote download for fresh dev environments.
+# ---------------------------------------------------------------------------
+_model = None
+
+def _get_embedder():
+    """Return the sentence-transformers model, loading it once and caching it."""
+    global _model
+    if _model is None:
+        from sentence_transformers import SentenceTransformer
+        # Prefer the bundled copy committed alongside this file
+        local_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "models", "all-MiniLM-L6-v2")
+        model_name = local_path if os.path.isdir(local_path) else "all-MiniLM-L6-v2"
+        _model = SentenceTransformer(model_name)
+    return _model
 
 
 # ---------------------------------------------------------------------------
